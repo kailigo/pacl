@@ -36,7 +36,6 @@ The dataset split files are stored as follows,
 
 The following scripts reproduce our results for the adaptation result between Real and Sketch domains from the DomainNet dataset under the 3-shot settings, with AlexNet and ResNet-34 as the backbone respectively. Other results can be obtained by changing the parameter '--source' and '--target' and '--trg_shots', which specify the source domain, target domain, and number of labeled samples from the target, respectively.
 
-
 `CUDA_VISIBLE_DEVICES=0 python main.py --beta 1.0 --alpha 0.1 --threshold 0.8 --align_type proto --log_file r2s_proto_alex_num3_semi_kld_hard --kld --labeled_hard --trg_shots 3 --num 3 --net alexnet --source real --target sketch`
 
 
@@ -51,6 +50,7 @@ The following scripts reproduce our results for the adaptation result between Re
 
 ## Citation 
 
+```
 @misc{li2021semisupervised,
       title={Semi-Supervised Domain Adaptation with Prototypical Alignment and Consistency Learning}, 
       author={Kai Li and Chang Liu and Handong Zhao and Yulun Zhang and Yun Fu},
@@ -59,6 +59,7 @@ The following scripts reproduce our results for the adaptation result between Re
       archivePrefix={arXiv},
       primaryClass={cs.CV}
 }
+```
 
 
 ## Acknowledgment 
