@@ -1,5 +1,8 @@
-# PyTorch implementation of the proposed PACL framework based on MME. (under construction)
+# Semi-Supervised Domain Adaptation with Prototypical Alignment and Consistency Learning
 
+This repository includes the PyTorch implementation for RCAN introduced in the following paper:
+
+[Kai Li](http://kailigo.github.io/), [Chang Liu](https://sites.google.com/view/cliu5/home), [Handong Zhao](https://hdzhao.github.io/) [Yulun Zhang](http://yulunzhang.com/), and [Yun Fu](http://www1.ece.neu.edu/~yunfu/), "Semi-Supervised Domain Adaptation with Prototypical Alignment and Consistency Learning",  [[arXiv]](https://arxiv.org/abs/1807.02758)
 
 ## Install
 
@@ -40,16 +43,26 @@ The following scripts reproduce our results for the adaptation result between Re
 `CUDA_VISIBLE_DEVICES=0 python main.py --beta 1.0 --alpha 0.1 --threshold 0.8 --align_type proto --log_file r2s_proto_resnet_num3_semi_kld_hard --kld --labeled_hard --trg_shots 3 --num 3 --net resnet34 --source real --target sketch`
 
 
+## Test
 
+### Pretrained models
+
+
+
+## Citation 
+
+@misc{li2021semisupervised,
+      title={Semi-Supervised Domain Adaptation with Prototypical Alignment and Consistency Learning}, 
+      author={Kai Li and Chang Liu and Handong Zhao and Yulun Zhang and Yun Fu},
+      year={2021},
+      eprint={2104.09136},
+      archivePrefix={arXiv},
+      primaryClass={cs.CV}
+}
 
 
 ## Acknowledgment 
-This code is developed based this repo[https://github.com/VisionLearningGroup/SSDA_MME]
-
-
-
-
-
+This code is developed based on the implementation of [MME](https://github.com/VisionLearningGroup/SSDA_MME).
 
 
 
