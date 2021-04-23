@@ -46,48 +46,210 @@ class ResizeImage():
         return img.resize((th, tw))
 
 
-def return_dataset(args):
-    
+
+def return_dataset_hard(args):
     base_path = './data/txt/%s' % args.dataset
     root = './data/%s/' % args.dataset
 
 
-    image_set_file_s = \
-        os.path.join(base_path,
-                     'labeled_source_images_' +
-                     args.source + '.txt')
+    if args.dataset == 'visda':
+        image_set_file_s = \
+            os.path.join(base_path,
+                         'image_list.txt')
+        
+        image_set_file_t = \
+            os.path.join(base_path,
+                         'set1_labeled_target_images_sketch_3.txt')
+        
+        image_set_file_t_val = \
+            os.path.join(base_path,
+                         'set1_unlabeled_target_images_sketch_3.txt')
 
-    image_set_file_t = \
-        os.path.join(base_path,
-                     'labeled_target_images_' +
-                     args.target + '_%d.txt' % (args.num))
+        image_set_file_unl = \
+            os.path.join(base_path,
+                        'set1_unlabeled_target_images_sketch_3.txt')
 
-    image_set_file_t_val = \
-        os.path.join(base_path,
-                     'validation_target_images_' +
-                     args.target + '_3.txt')
+    else:
+        image_set_file_s = \
+            os.path.join(base_path,
+                         'labeled_source_images_' +
+                         args.source + '.txt')
+        image_set_file_t = \
+            os.path.join(base_path,
+                         'set2_labeled_target_images_' +
+                         args.target + '_%d.txt' % (args.num))
+        image_set_file_t_val = \
+            os.path.join(base_path,
+                         'validation_target_images_' +
+                         args.target + '_3.txt')
+        image_set_file_unl = \
+            os.path.join(base_path,
+                         'set2_unlabeled_target_images_' +
+                         args.target + '_%d.txt' % (args.num))
 
-    image_set_file_unl = \
-        os.path.join(base_path,
-                     'unlabeled_target_images_' +
-                     args.target + '_%d.txt' % (args.num))
 
-    # image_set_file_s = \
-    #     os.path.join(base_path,
-    #                  'labeled_source_images_' +
-    #                  args.source + '.txt')
-    # image_set_file_t = \
-    #     os.path.join(base_path,
-    #                  's1_labeled_target_images_' +
-    #                  args.target + '_%d.txt' % (args.num))
-    # image_set_file_t_val = \
-    #     os.path.join(base_path,
-    #                  's1_validation_target_images_' +
-    #                  args.target + '_3.txt')
-    # image_set_file_unl = \
-    #     os.path.join(base_path,
-    #                  's1_unlabeled_target_images_' +
-    #                  args.target + '_%d.txt' % (args.num))
+
+
+    if args.net == 'alexnet':
+        crop_size = 227
+    else:
+        crop_size = 224
+
+    data_transforms = {
+        'train': transforms.Compose([
+            transforms.Resize(256),
+            transforms.RandomHorizontalFlip(),
+            RandAugmentMC(n=2, m=10),
+            transforms.RandomCrop(crop_size),
+            transforms.ToTensor(),
+            transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+        ]),
+        'val': transforms.Compose([
+            transforms.Resize(256),
+            transforms.RandomHorizontalFlip(),
+            transforms.RandomCrop(crop_size),
+            transforms.ToTensor(),
+            transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+        ]),
+        'test': transforms.Compose([
+            transforms.Resize(256),
+            transforms.CenterCrop(crop_size),
+            transforms.ToTensor(),
+            transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+        ]),
+    }
+
+
+    if args.dataset == 'visda':
+
+        source_dataset = Imagelists_VISDA(image_set_file_s, root=root+'/train',
+                                          transform=data_transforms['train'])
+
+        target_dataset = Imagelists_VISDA(image_set_file_t, root=root+'/validation',
+                                          transform=data_transforms['train'])
+
+        target_dataset_val = Imagelists_VISDA(image_set_file_t_val, root=root+'/validation',
+                                              transform=data_transforms['test'])
+
+        target_dataset_unl = Imagelists_VISDA(image_set_file_unl, root=root+'/validation',
+                                              transform=data_transforms['train'])
+
+        target_dataset_test = Imagelists_VISDA(image_set_file_unl, root=root+'/validation',
+                                               transform=data_transforms['test'])
+
+    else:
+        source_dataset = Imagelists_VISDA(image_set_file_s, root=root,
+                                          transform=data_transforms['train'])
+
+        target_dataset = Imagelists_VISDA(image_set_file_t, root=root,
+                                          transform=data_transforms['train'])
+
+        target_dataset_val = Imagelists_VISDA(image_set_file_t_val, root=root,
+                                              transform=data_transforms['test'])
+
+        target_dataset_unl = Imagelists_VISDA(image_set_file_unl, root=root,
+                                              transform=data_transforms['train'])
+
+        target_dataset_test = Imagelists_VISDA(image_set_file_unl, root=root,
+                                               transform=data_transforms['test'])
+
+
+
+
+    class_list = return_classlist(image_set_file_s)
+    print("%d classes in this dataset" % len(class_list))
+    if args.net == 'alexnet':
+        bs = 32
+    else:
+        bs = 24
+
+
+    nw = 12
+    source_loader = torch.utils.data.DataLoader(source_dataset, batch_size=bs,
+                                                num_workers=nw, shuffle=True,
+                                                drop_last=True)
+    target_loader = \
+        torch.utils.data.DataLoader(target_dataset,
+                                    batch_size=min(bs, len(target_dataset)),
+                                    num_workers=nw,
+                                    shuffle=True, drop_last=True)
+
+
+    source_loader_eval = torch.utils.data.DataLoader(source_dataset, batch_size=bs,
+                                                num_workers=nw, shuffle=True,
+                                                drop_last=True)
+    target_loader_eval = \
+        torch.utils.data.DataLoader(target_dataset,
+                                    batch_size=min(bs, len(target_dataset)),
+                                    num_workers=nw,
+                                    shuffle=True, drop_last=True)
+
+
+    target_loader_val = \
+        torch.utils.data.DataLoader(target_dataset_val,
+                                    batch_size=min(bs, len(target_dataset_val)),
+                                    num_workers=nw,
+                                    shuffle=True, drop_last=True)
+    target_loader_unl = \
+        torch.utils.data.DataLoader(target_dataset_unl,
+                                    batch_size=bs * 2, num_workers=nw,
+                                    shuffle=True, drop_last=True)
+    target_loader_test = \
+        torch.utils.data.DataLoader(target_dataset_test,
+                                    batch_size=bs * 2, num_workers=nw,
+                                    shuffle=True, drop_last=True)
+
+    return source_loader, target_loader, target_loader_unl, \
+        target_loader_val, target_loader_test, class_list
+
+
+
+
+
+
+def return_dataset(args):
+    base_path = './data/txt/%s' % args.dataset
+    root = './data/%s/' % args.dataset
+
+
+
+
+    if args.dataset == 'visda':
+        image_set_file_s = \
+            os.path.join(base_path,
+                         'image_list.txt')
+        
+        image_set_file_t = \
+            os.path.join(base_path,
+                         'set1_labeled_target_images_sketch_3.txt')
+        
+        image_set_file_t_val = \
+            os.path.join(base_path,
+                         'set1_unlabeled_target_images_sketch_3.txt')
+
+        image_set_file_unl = \
+            os.path.join(base_path,
+                        'set1_unlabeled_target_images_sketch_3.txt')
+
+    else:
+        image_set_file_s = \
+            os.path.join(base_path,
+                         'labeled_source_images_' +
+                         args.source + '.txt')
+        image_set_file_t = \
+            os.path.join(base_path,
+                         'set2_labeled_target_images_' +
+                         args.target + '_%d.txt' % (args.num))
+        image_set_file_t_val = \
+            os.path.join(base_path,
+                         'validation_target_images_' +
+                         args.target + '_3.txt')
+        image_set_file_unl = \
+            os.path.join(base_path,
+                         'set2_unlabeled_target_images_' +
+                         args.target + '_%d.txt' % (args.num))
+
+
 
 
     if args.net == 'alexnet':
@@ -119,50 +281,58 @@ def return_dataset(args):
         ]),
     }
 
-    # if args.dataset=='visda':
-    #     root_src = root + '/train'
-    #     root_trg = root + '/validation'
-    # else:
-    #     root_src = root
-    #     root_trg = root
 
 
-    source_dataset = Imagelists_VISDA(image_set_file_s, root=root,
-                                      transform=data_transforms['train'])
+    if args.dataset == 'visda':
 
-    target_dataset = Imagelists_VISDA(image_set_file_t, root=root,
-                                      transform=data_transforms['train'])
-
-    target_dataset_val = Imagelists_VISDA(image_set_file_t_val, root=root,
-                                          transform=data_transforms['test'])
-
-    target_dataset_unl = Imagelists_VISDA(image_set_file_unl, root=root,
+        source_dataset = Imagelists_VISDA(image_set_file_s, root=root+'/train',
                                           transform=data_transforms['train'])
 
-    target_dataset_test = Imagelists_VISDA(image_set_file_unl, root=root,
-                                           transform=data_transforms['test'])
+        target_dataset = Imagelists_VISDA(image_set_file_t, root=root+'/validation',
+                                          transform=data_transforms['train'])
+
+        target_dataset_val = Imagelists_VISDA(image_set_file_t_val, root=root+'/validation',
+                                              transform=data_transforms['test'])
+
+        target_dataset_unl = Imagelists_VISDA(image_set_file_unl, root=root+'/validation',
+                                              transform=data_transforms['train'])
+
+        target_dataset_test = Imagelists_VISDA(image_set_file_unl, root=root+'/validation',
+                                               transform=data_transforms['test'])
+
+    else:
+        source_dataset = Imagelists_VISDA(image_set_file_s, root=root,
+                                          transform=data_transforms['train'])
+
+        target_dataset = Imagelists_VISDA(image_set_file_t, root=root,
+                                          transform=data_transforms['train'])
+
+        target_dataset_val = Imagelists_VISDA(image_set_file_t_val, root=root,
+                                              transform=data_transforms['test'])
+
+        target_dataset_unl = Imagelists_VISDA(image_set_file_unl, root=root,
+                                              transform=data_transforms['train'])
+
+        target_dataset_test = Imagelists_VISDA(image_set_file_unl, root=root,
+                                               transform=data_transforms['test'])
+
+
 
     class_list = return_classlist(image_set_file_s)
     print("%d classes in this dataset" % len(class_list))
-
     if args.net == 'alexnet':
         bs = 32
     else:
         bs = 24
 
 
-    # breakpoint()
-    
-    # bs = 10
-
-    nw = 8
+    nw = 12
     source_loader = torch.utils.data.DataLoader(source_dataset, batch_size=bs,
                                                 num_workers=nw, shuffle=True,
                                                 drop_last=True)
     target_loader = \
         torch.utils.data.DataLoader(target_dataset,
-                                    # batch_size=min(bs, len(target_dataset)),
-                                    batch_size=8,
+                                    batch_size=min(bs, len(target_dataset)),
                                     num_workers=nw,
                                     shuffle=True, drop_last=True)
 
@@ -182,7 +352,6 @@ def return_dataset(args):
                                     batch_size=min(bs, len(target_dataset_val)),
                                     num_workers=nw,
                                     shuffle=True, drop_last=True)
-    
     target_loader_unl = \
         torch.utils.data.DataLoader(target_dataset_unl,
                                     batch_size=bs * 2, num_workers=nw,
@@ -202,6 +371,7 @@ def load_pickle():
         dict_path2img = pickle.load(config_dictionary_file)
     
     return dict_path2img
+
 
 
 
@@ -454,6 +624,37 @@ class RandomIdentitySampler_alignedreid1(Sampler):
 
 
 
+# class RandomIdentitySampler_alignedreid_pseudo(Sampler):
+#     def __init__(self, num_of_class, source_label, target_label, num_per_class_src, num_per_class_trg):        
+
+#         self.num_instances = num_per_class_src
+#         self.num_pids_per_batch = num_of_class
+        
+#         self.index_dic = defaultdict(list)
+#         for index, pid in enumerate(source_label):
+#             self.index_dic[pid].append(index)
+#         self.pids = list(self.index_dic.keys())
+#         self.num_identities = len(self.pids)
+
+
+#     def __iter__(self):
+
+#         indices = torch.randperm(self.num_identities)
+#         ret = []
+#         for i in indices:
+#             pid = self.pids[i]
+#             t = self.index_dic[pid]
+#             replace = False if len(t) >= self.num_instances else True
+#             t = np.random.choice(t, size=self.num_instances, replace=replace)
+#             ret.extend(t)
+#         return iter(ret)
+
+#     def __len__(self):
+#         return self.num_identities * self.num_instances
+
+
+
+
 class RandomIdentitySampler_alignedreid_pseudo(Sampler):
     def __init__(self, num_of_class, source_label, target_label, num_per_class_src, num_per_class_trg):
 
@@ -513,6 +714,59 @@ def pil_loader(path):
     with open(path, 'rb') as f:
         img = Image.open(f)
         return img.convert('RGB')
+
+
+
+
+
+# class RandomIdentitySampler_alignedreid_src_trg(Sampler):
+#     def __init__(self, num_of_class, source_label, target_label, num_per_class_src, num_per_class_trg):
+
+#         self.index_dic_src = defaultdict(list)
+#         for index, pid in enumerate(source_label):
+#             self.index_dic_src[pid].append(index)        
+#         num_of_all_source = len(source_label)
+
+#         self.index_dic_trg = defaultdict(list)
+#         for index, pid in enumerate(target_label):
+#             self.index_dic_trg[pid].append(index+num_of_all_source)
+
+#         self.num_per_class_src = num_per_class_src
+#         self.num_per_class_trg = num_per_class_trg
+#         self.num_of_class = num_of_class
+#         self.classes = list(self.index_dic_src.keys())
+#         self.num_identities = len(self.classes)
+
+
+#     def __iter__(self):        
+#         # class_list = np.random.choice(self.classes, self.num_of_class, replace=False)
+
+#         class_list = list(range(self.num_identities))
+#         random.shuffle(class_list)
+
+#         batch_src = []
+#         batch_trg = []
+#         for j in class_list:
+#             src_pid = self.index_dic_src[j]
+#             trg_pid = self.index_dic_trg[j]
+
+#             replace1 = False if len(trg_pid) >= self.num_per_class_trg else True
+#             replace2 = False if len(src_pid) >= self.num_per_class_src else True
+
+#             # breakpoint()
+
+#             src_t = np.random.choice(src_pid, size=self.num_per_class_src, replace=replace2)
+#             trg_t = np.random.choice(trg_pid, size=self.num_per_class_trg, replace=replace1)
+            
+#             batch_src.extend(src_t)
+#             batch_trg.extend(trg_t)
+
+#         batch_src.extend(batch_trg)
+#         return iter(batch_src)
+
+#     def __len__():
+#         return self.num_identities * self.num_per_class_src
+
 
 
 
@@ -622,9 +876,6 @@ def return_dataset_balance_fast_src_trg(args):
                                 batch_size=bs*2, num_workers=nw, shuffle=True, drop_last=True)
 
     return labeled_data_loader, target_loader_val, target_loader_test, target_loader_unl, class_list
-
-
-        
 
 
 
@@ -1348,10 +1599,31 @@ def return_dataset_balance_self_fast(args):
 
     base_path = './data/txt/%s' % args.dataset
     root = './data/%s/' % args.dataset
-    image_set_file_s = os.path.join(base_path, 'labeled_source_images_' + args.source + '.txt')
-    image_set_file_t = os.path.join(base_path, 'labeled_target_images_' + args.target + '_%d.txt' % (args.num))
-    image_set_file_t_val = os.path.join(base_path, 'validation_target_images_' + args.target + '_3.txt')
-    image_set_file_unl = os.path.join(base_path, 'unlabeled_target_images_' + args.target + '_%d.txt' % (args.num))
+
+
+    if args.dataset == 'visda':
+        image_set_file_s = \
+            os.path.join(base_path,
+                         'image_list.txt')
+        
+        image_set_file_t = \
+            os.path.join(base_path,
+                         'set1_labeled_target_images_sketch_3.txt')
+        
+        image_set_file_t_val = \
+            os.path.join(base_path,
+                         'set1_unlabeled_target_images_sketch_3.txt')
+
+        image_set_file_unl = \
+            os.path.join(base_path,
+                        'set1_unlabeled_target_images_sketch_3.txt')
+    else:
+        image_set_file_s = os.path.join(base_path, 'labeled_source_images_' + args.source + '.txt')
+        image_set_file_t = os.path.join(base_path, 'labeled_target_images_' + args.target + '_%d.txt' % (args.num))
+        image_set_file_t_val = os.path.join(base_path, 'validation_target_images_' + args.target + '_3.txt')
+        image_set_file_unl = os.path.join(base_path, 'unlabeled_target_images_' + args.target + '_%d.txt' % (args.num))
+
+
 
     if args.net == 'alexnet':
         crop_size = 227
@@ -1362,8 +1634,9 @@ def return_dataset_balance_self_fast(args):
     data_transforms = {
         'train': transforms.Compose([
             transforms.Resize(256),
-            transforms.RandomHorizontalFlip(),
+            transforms.RandomHorizontalFlip(),            
             transforms.RandomCrop(crop_size),
+            RandAugmentMC(n=2, m=10),
             transforms.ToTensor(),
             transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
         ]),
@@ -1384,8 +1657,8 @@ def return_dataset_balance_self_fast(args):
             # transforms.Resize(256),
             # transforms.RandomHorizontalFlip(),
             # transforms.RandomCrop(crop_size),
-            transforms.RandomResizedCrop(crop_size),
             transforms.RandomHorizontalFlip(),
+            transforms.RandomResizedCrop(crop_size),            
             #transforms.RandomGrayscale(p=0.2),
             # transforms.RandomApply([transforms.ColorJitter(0.4, 0.4, 0.4, 0.4)], p=0.5),
             RandAugmentMC(n=2, m=10),
@@ -1394,25 +1667,36 @@ def return_dataset_balance_self_fast(args):
             transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
         ]),
     }
-
     dict_path2img = None
+        
 
-    
-    target_dataset_val = Imagelists_VISDA(image_set_file_t_val, root=root, transform=data_transforms['val'], dict_path2img=dict_path2img)    
-    target_dataset_test = Imagelists_VISDA(image_set_file_unl, root=root, transform=data_transforms['test'], dict_path2img=dict_path2img)
-    target_dataset_unl = Imagelists_VISDA_un(image_set_file_unl, root=root, transform=data_transforms['val'],transform2=data_transforms['self'])
+    if args.dataset == 'visda':
+        target_dataset_val = Imagelists_VISDA(image_set_file_t_val, root=root+'/validation', transform=data_transforms['val'], dict_path2img=dict_path2img)    
+        target_dataset_test = Imagelists_VISDA(image_set_file_unl, root=root+'/validation', transform=data_transforms['test'], dict_path2img=dict_path2img)
+        target_dataset_unl = Imagelists_VISDA_un(image_set_file_unl, root=root+'/validation', transform=data_transforms['val'],transform2=data_transforms['self'])
 
-    # train_dataset = Imagelists_VISDA(image_set_file_s, root=root, transform=data_transforms['train'], dict_path2img=dict_path2img)
-    # target_dataset = Imagelists_VISDA_Target_Labeled(image_set_file_t, root=root, ways=args.ways, trg_shots=args.trg_shots,
-    #                                 transform=data_transforms['train'], dict_path2img=dict_path2img) 
+        src_imgs, src_labels = make_dataset_fromlist(image_set_file_s)
+        # breakpoint()
+        src_imgs = ['train/'+src for src in src_imgs]
+        trg_train_imgs, trg_train_labels = make_dataset_fromlist(image_set_file_t)
+        trg_train_imgs = ['validation/'+trg for trg in trg_train_imgs]
 
-    src_imgs, src_labels = make_dataset_fromlist(image_set_file_s)
-    trg_train_imgs, trg_train_labels = make_dataset_fromlist(image_set_file_t)
+        labeled_imgs = np.concatenate((src_imgs, trg_train_imgs))
+        labels = np.concatenate((src_labels, trg_train_labels))
+        labeled_dataset = Imagelists_VISDA_from_list(labeled_imgs, labels, root=root, transform=data_transforms['train'])
 
+    else:
+        target_dataset_val = Imagelists_VISDA(image_set_file_t_val, root=root, transform=data_transforms['val'], dict_path2img=dict_path2img)    
+        target_dataset_test = Imagelists_VISDA(image_set_file_unl, root=root, transform=data_transforms['test'], dict_path2img=dict_path2img)
+        target_dataset_unl = Imagelists_VISDA_un(image_set_file_unl, root=root, transform=data_transforms['val'],transform2=data_transforms['self'])
 
-    labeled_imgs = np.concatenate((src_imgs, trg_train_imgs))
-    labels = np.concatenate((src_labels, trg_train_labels))
-    labeled_dataset = Imagelists_VISDA_from_list(labeled_imgs, labels, root=root, transform=data_transforms['train'])
+        src_imgs, src_labels = make_dataset_fromlist(image_set_file_s)
+        trg_train_imgs, trg_train_labels = make_dataset_fromlist(image_set_file_t)
+
+        labeled_imgs = np.concatenate((src_imgs, trg_train_imgs))
+        labels = np.concatenate((src_labels, trg_train_labels))
+        labeled_dataset = Imagelists_VISDA_from_list(labeled_imgs, labels, root=root, transform=data_transforms['train'])
+
 
 
     class_list = return_classlist(image_set_file_s)
@@ -1450,6 +1734,7 @@ def return_dataset_balance_self_fast(args):
                                 batch_size=bs*2, num_workers=nw, shuffle=True, drop_last=True)
 
     return labeled_data_loader, target_loader_val, target_loader_test, target_loader_unl, class_list
+
 
 
 
@@ -1552,10 +1837,31 @@ def return_dataset_balance_self_hard_fast(args):
 
     base_path = './data/txt/%s' % args.dataset
     root = './data/%s/' % args.dataset
-    image_set_file_s = os.path.join(base_path, 'labeled_source_images_' + args.source + '.txt')
-    image_set_file_t = os.path.join(base_path, 'labeled_target_images_' + args.target + '_%d.txt' % (args.num))
-    image_set_file_t_val = os.path.join(base_path, 'validation_target_images_' + args.target + '_3.txt')
-    image_set_file_unl = os.path.join(base_path, 'unlabeled_target_images_' + args.target + '_%d.txt' % (args.num))
+
+
+    if args.dataset == 'visda':
+        image_set_file_s = \
+            os.path.join(base_path,
+                         'image_list.txt')
+        
+        image_set_file_t = \
+            os.path.join(base_path,
+                         'set1_labeled_target_images_sketch_3.txt')
+        
+        image_set_file_t_val = \
+            os.path.join(base_path,
+                         'set1_unlabeled_target_images_sketch_3.txt')
+
+        image_set_file_unl = \
+            os.path.join(base_path,
+                        'set1_unlabeled_target_images_sketch_3.txt')
+    else:
+        image_set_file_s = os.path.join(base_path, 'labeled_source_images_' + args.source + '.txt')
+        image_set_file_t = os.path.join(base_path, 'labeled_target_images_' + args.target + '_%d.txt' % (args.num))
+        image_set_file_t_val = os.path.join(base_path, 'validation_target_images_' + args.target + '_3.txt')
+        image_set_file_unl = os.path.join(base_path, 'unlabeled_target_images_' + args.target + '_%d.txt' % (args.num))
+
+
 
     if args.net == 'alexnet':
         crop_size = 227
@@ -1600,34 +1906,35 @@ def return_dataset_balance_self_hard_fast(args):
         ]),
     }
     dict_path2img = None
-    
+        
 
-    # if args.dataset=='visda':
-    #     root_src = root + '/train'
-    #     root_trg = root + '/validation'
-    # else:
-    #     root_src = root
-    #     root_trg = root
+    if args.dataset == 'visda':
+        target_dataset_val = Imagelists_VISDA(image_set_file_t_val, root=root+'/validation', transform=data_transforms['val'], dict_path2img=dict_path2img)    
+        target_dataset_test = Imagelists_VISDA(image_set_file_unl, root=root+'/validation', transform=data_transforms['test'], dict_path2img=dict_path2img)
+        target_dataset_unl = Imagelists_VISDA_un(image_set_file_unl, root=root+'/validation', transform=data_transforms['val'],transform2=data_transforms['self'])
 
+        src_imgs, src_labels = make_dataset_fromlist(image_set_file_s)
+        # breakpoint()
+        src_imgs = ['train/'+src for src in src_imgs]
+        trg_train_imgs, trg_train_labels = make_dataset_fromlist(image_set_file_t)
+        trg_train_imgs = ['validation/'+trg for trg in trg_train_imgs]
 
+        labeled_imgs = np.concatenate((src_imgs, trg_train_imgs))
+        labels = np.concatenate((src_labels, trg_train_labels))
+        labeled_dataset = Imagelists_VISDA_from_list(labeled_imgs, labels, root=root, transform=data_transforms['train'])
 
-    target_dataset_val = Imagelists_VISDA(image_set_file_t_val, root=root, transform=data_transforms['val'], dict_path2img=dict_path2img)    
-    target_dataset_test = Imagelists_VISDA(image_set_file_unl, root=root, transform=data_transforms['test'], dict_path2img=dict_path2img)
-    target_dataset_unl = Imagelists_VISDA_un(image_set_file_unl, root=root, transform=data_transforms['val'],transform2=data_transforms['self'])
+    else:
+        target_dataset_val = Imagelists_VISDA(image_set_file_t_val, root=root, transform=data_transforms['val'], dict_path2img=dict_path2img)    
+        target_dataset_test = Imagelists_VISDA(image_set_file_unl, root=root, transform=data_transforms['test'], dict_path2img=dict_path2img)
+        target_dataset_unl = Imagelists_VISDA_un(image_set_file_unl, root=root, transform=data_transforms['val'],transform2=data_transforms['self'])
 
-    # train_dataset = Imagelists_VISDA(image_set_file_s, root=root, transform=data_transforms['train'], dict_path2img=dict_path2img)
-    # target_dataset = Imagelists_VISDA_Target_Labeled(image_set_file_t, root=root, ways=args.ways, trg_shots=args.trg_shots,
-    #                                 transform=data_transforms['train'], dict_path2img=dict_path2img) 
+        src_imgs, src_labels = make_dataset_fromlist(image_set_file_s)
+        trg_train_imgs, trg_train_labels = make_dataset_fromlist(image_set_file_t)
 
-    src_imgs, src_labels = make_dataset_fromlist(image_set_file_s)
-    trg_train_imgs, trg_train_labels = make_dataset_fromlist(image_set_file_t)
+        labeled_imgs = np.concatenate((src_imgs, trg_train_imgs))
+        labels = np.concatenate((src_labels, trg_train_labels))
+        labeled_dataset = Imagelists_VISDA_from_list(labeled_imgs, labels, root=root, transform=data_transforms['train'])
 
-
-    # breakpoint()
-
-    labeled_imgs = np.concatenate((src_imgs, trg_train_imgs))
-    labels = np.concatenate((src_labels, trg_train_labels))
-    labeled_dataset = Imagelists_VISDA_from_list(labeled_imgs, labels, root=root, transform=data_transforms['train'])
 
 
     class_list = return_classlist(image_set_file_s)
@@ -1659,7 +1966,7 @@ def return_dataset_balance_self_hard_fast(args):
                                     num_workers=nw, shuffle=True, drop_last=True)
 
     target_loader_test = torch.utils.data.DataLoader(target_dataset_test, batch_size=bs*2, num_workers=nw,
-                                    shuffle=True, drop_last=True)
+                                    shuffle=False, drop_last=False)
 
     target_loader_unl = torch.utils.data.DataLoader(target_dataset_unl,
                                 batch_size=bs*2, num_workers=nw, shuffle=True, drop_last=True)
@@ -1919,7 +2226,11 @@ def return_dataset_eval(args):
 def return_dataset_test(args):
     base_path = './data/txt/%s' % args.dataset
     root = './data/%s/' % args.dataset
-    image_set_file_s = os.path.join(base_path, args.source + '_all' + '.txt')
+
+    # image_set_file_s = os.path.join(base_path, args.source + '_all' + '.txt')
+
+    image_set_file_s = os.path.join(base_path, 'labeled_source_images_' +args.source + '.txt')
+
     image_set_file_test = os.path.join(base_path,
                                        'unlabeled_target_images_' +
                                        args.target + '_%d.txt' % (args.num))
