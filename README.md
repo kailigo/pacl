@@ -8,7 +8,7 @@ This repository includes the PyTorch implementation of PACL  introduced in the f
 
 `pip install -r requirements.txt`
 
-The code is written for Pytorch 0.4.0, but should work for other version
+The code is written for Pytorch 0.4.1, but should work for other version
 with some modifications.
 
 ## Data preparation
