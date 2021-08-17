@@ -1,8 +1,8 @@
 # ECACL: A Holistic Framework for Semi-Supervised Domain Adaptation
 
-This repository includes the PyTorch implementation of PACL introduced in the following paper:
+This repository includes the PyTorch implementation of ECACL introduced in the following paper:
 
-[Kai Li](http://kailigo.github.io/), [Chang Liu](https://sites.google.com/view/cliu5/home), [Handong Zhao](https://hdzhao.github.io/) [Yulun Zhang](http://yulunzhang.com/), and [Yun Fu](http://www1.ece.neu.edu/~yunfu/), "ECACL: A Holistic Framework for Semi-Supervised Domain Adaptation",  [[ICCV 2021]](https://arxiv.org/abs/1807.02758)
+[Kai Li](http://kailigo.github.io/), [Chang Liu](https://sites.google.com/view/cliu5/home), [Handong Zhao](https://hdzhao.github.io/) [Yulun Zhang](http://yulunzhang.com/), and [Yun Fu](http://www1.ece.neu.edu/~yunfu/), "ECACL: A Holistic Framework for Semi-Supervised Domain Adaptation",  [ICCV 2021](https://arxiv.org/abs/1807.02758)
 
 ## Install
 
