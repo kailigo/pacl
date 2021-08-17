@@ -1,8 +1,8 @@
-# Semi-Supervised Domain Adaptation with Prototypical Alignment and Consistency Learning
+# ECACL: A Holistic Framework for Semi-Supervised Domain Adaptation
 
-This repository includes the PyTorch implementation of PACL  introduced in the following paper:
+This repository includes the PyTorch implementation of PACL introduced in the following paper:
 
-[Kai Li](http://kailigo.github.io/), [Chang Liu](https://sites.google.com/view/cliu5/home), [Handong Zhao](https://hdzhao.github.io/) [Yulun Zhang](http://yulunzhang.com/), and [Yun Fu](http://www1.ece.neu.edu/~yunfu/), "Semi-Supervised Domain Adaptation with Prototypical Alignment and Consistency Learning",  [[arXiv]](https://arxiv.org/abs/1807.02758)
+[Kai Li](http://kailigo.github.io/), [Chang Liu](https://sites.google.com/view/cliu5/home), [Handong Zhao](https://hdzhao.github.io/) [Yulun Zhang](http://yulunzhang.com/), and [Yun Fu](http://www1.ece.neu.edu/~yunfu/), "ECACL: A Holistic Framework for Semi-Supervised Domain Adaptation",  [[ICCV 2021]](https://arxiv.org/abs/1807.02758)
 
 ## Install
 
@@ -71,15 +71,17 @@ Run the following scripts and get the evaluation results:
 
 ## Citation 
 
+
 ```
-@misc{li2021semisupervised,
-      title={Semi-Supervised Domain Adaptation with Prototypical Alignment and Consistency Learning}, 
-      author={Kai Li and Chang Liu and Handong Zhao and Yulun Zhang and Yun Fu},
-      year={2021},
-      eprint={2104.09136},
-      archivePrefix={arXiv},
-      primaryClass={cs.CV}
+@inproceedings{li2021ECACL,
+  title={ECACL: A Holistic Framework for Semi-Supervised Domain Adaptation},
+  author={Li, Kai and Liu, Chang and Zhao, Handong and Zhang, Yulun and Fu, Yun},
+  booktitle={Proceedings of the IEEE/CVF International Conference on Computer Vision},
+  pages={},
+  year={2021}
 }
+
+
 ```
 
 
