@@ -2,7 +2,7 @@
 
 This repository includes the PyTorch implementation of ECACL introduced in the following paper:
 
-[Kai Li](http://kailigo.github.io/), [Chang Liu](https://sites.google.com/view/cliu5/home), [Handong Zhao](https://hdzhao.github.io/) [Yulun Zhang](http://yulunzhang.com/), and [Yun Fu](http://www1.ece.neu.edu/~yunfu/), "ECACL: A Holistic Framework for Semi-Supervised Domain Adaptation",  [ICCV 2021](https://arxiv.org/abs/1807.02758)
+[Kai Li](http://kailigo.github.io/), [Chang Liu](https://sites.google.com/view/cliu5/home), [Handong Zhao](https://hdzhao.github.io/) [Yulun Zhang](http://yulunzhang.com/), and [Yun Fu](http://www1.ece.neu.edu/~yunfu/), "ECACL: A Holistic Framework for Semi-Supervised Domain Adaptation",  [ICCV 2021](https://openaccess.thecvf.com/content/ICCV2021/papers/Li_ECACL_A_Holistic_Framework_for_Semi-Supervised_Domain_Adaptation_ICCV_2021_paper.pdf)
 
 ## Install
 
